@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de IR sobre PLR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    input, button {
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
+    .resultado {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Calculadora de IR sobre PLR</h1>
+  <label for="plr">Digite o valor bruto da PLR (R$):</label><br>
+  <input type="number" id="plr" placeholder="Ex: 12000"><br>
+  <button onclick="calcularIR()">Calcular</button>
+
+  <div id="resultado" class="resultado" style="display:none;"></div>
+
+  <script>
+    function calcularIR() {
+      const valor = parseFloat(document.getElementById('plr').value);
+      if (isNaN(valor) || valor <= 0) {
+        alert('Informe um valor válido.');
+        return;
+      }
+
+      let aliquota = 0;
+      let deducao = 0;
+
+      if (valor <= 7407.11) {
+        aliquota = 0;
+        deducao = 0;
+      } else if (valor <= 9922.28) {
+        aliquota = 0.075;
+        deducao = 555.53;
+      } else if (valor <= 13167.00) {
+        aliquota = 0.15;
+        deducao = 1239.32;
+      } else if (valor <= 16380.38) {
+        aliquota = 0.225;
+        deducao = 2232.51;
+      } else {
+        aliquota = 0.275;
+        deducao = 3051.53;
+      }
+
+      const ir = (valor * aliquota) - deducao;
+      const liquido = valor - ir;
+
+      document.getElementById('resultado').style.display = 'block';
+      document.getElementById('resultado').innerHTML = `
+        <strong>Resultado:</strong><br>
+        IR devido: R$ ${ir.toFixed(2)}<br>
+        Valor líquido a receber: R$ ${liquido.toFixed(2)}
+      `;
+    }
+  </script>
+</body>
+</html>
