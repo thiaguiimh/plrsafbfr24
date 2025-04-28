@@ -195,7 +195,7 @@
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 300px;
     }
     
     .card-content {
@@ -206,10 +206,7 @@
     
     .card-footer {
       margin-top: auto;
-    }
-    
-    .output-container {
-      margin-top: 15px;
+      padding-top: 15px;
     }
     
     .card h4 {
@@ -228,6 +225,12 @@
       margin-bottom: 8px;
     }
     
+    .teto-info {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
     .output {
       background: #f8f8fa;
       padding: 12px;
@@ -235,10 +238,6 @@
       font-weight: 600;
       text-align: right;
       border-left: 4px solid var(--primary);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      min-height: 44px;
     }
     
     .output.no-ceiling {
@@ -720,32 +719,18 @@ function buscarJogos() {
     }
 
     Object.entries(jogos).forEach(([id, jogo]) => {
-      let bichoBruto, description;
+      let bichoBruto, tetoInfo;
       
       if (jogo.noCeiling) {
         // Jogo sem aplicação de teto
         bichoBruto = jogo.valor * cota / jogo.cotas;
-        description = `
-          <div class="output-container">
-            <div class="output no-ceiling">
-              <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
-              <span class="no-ceiling-tag">Sem teto</span>
-            </div>
-          </div>
-        `;
+        tetoInfo = `<p class="teto-info">Sem aplicação de teto</p>`;
       } else {
         // Cálculo normal com teto
         const tetoPct = (jogo.valor / 168000) * 0.15;
         const tetoValor = salario * tetoPct;
         bichoBruto = Math.min((jogo.valor * cota / jogo.cotas), tetoValor);
-        description = `
-          <div class="output-container">
-            <p>Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>
-            <div class="output">
-              <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
-            </div>
-          </div>
-        `;
+        tetoInfo = `<p class="teto-info">Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>`;
       }
       
       total += bichoBruto;
@@ -760,7 +745,10 @@ function buscarJogos() {
             <p>Data: ${formatarData(jogo.data)}</p>
             <p>Bicho Total Staff: R$ ${formatarMoeda(jogo.valor)}</p>
             <div class="card-footer">
-              ${description}
+              ${tetoInfo}
+              <div class="output ${jogo.noCeiling ? 'no-ceiling' : ''}">
+                Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}
+              </div>
             </div>
           </div>
         </div>`;
