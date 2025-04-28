@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Bicho - IRPF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <style>
+    body { font-family: 'Roboto', sans-serif; background-color: #f4f6f9; margin: 0; padding: 40px; display: flex; justify-content: center; }
+    .container { background-color: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 30px 40px; max-width: 1200px; width: 100%; position: relative; }
+    .admin-link {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 12px;
+      color: #1a73e8;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+      z-index: 10;
+    }
+    .admin-link:hover { background: #e8f0fe; }
+    .logo { display: block; margin: 0 auto 20px auto; max-width: 300px; height: auto; }
+    h2 { text-align: center; color: #333; margin-bottom: 30px; }
+    .section { margin-bottom: 30px; text-align: left; }
+    label { display: block; font-weight: 500; margin-bottom: 6px; color: #444; }
+    input, select, button { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 10px; box-sizing: border-box; }
+    button { background-color: #1a73e8; color: white; border: none; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #155ab6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background-color: #f1f1f1; }
+    .games-container { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; margin-top: 20px; }
+    .card { background: #f9fafc; border: 1px solid #e0e6ed; border-radius: 10px; padding: 18px; flex: 1 1 calc(33% - 16px); box-sizing: border-box; text-align: left; }
+    .output { background: #ffecec; padding: 8px; border-radius: 6px; color: #b03e3e; font-weight: bold; font-size: 16px; text-align: right; margin-top: 6px; }
+    .total-output { font-size: 24px; text-align: center; margin-top: 40px; color: #0d253f; font-weight: bold; }
+  </style>
+</head>
+<body>
+<button class="admin-link" onclick="acessarAdmin()">Área Admin</button>
+
+<div class="container">
+  <img src="saf_botafogo_preto.png" class="logo" alt="Logo Botafogo">
+  <h2>Calculadora de Bicho</h2>
+
+  <div class="section" id="usuario-final">
+    <label for="cota">Sua cota:</label>
+    <input type="number" id="cota" step="0.01">
+
+    <label for="salario">Seu salário bruto:</label>
+    <input type="number" id="salario" step="0.01">
+
+    <label for="pagamento">Selecione o pagamento:</label>
+    <select id="pagamento"></select>
+
+    <button onclick="buscarJogos()">Calcular</button>
+  </div>
+
+  <div class="games-container" id="games"></div>
+  <div class="total-output">TOTAL: <span id="total">R$ 0,00</span></div>
+
+  <div id="admin-area" style="display: none">
+	<div class="section">
+  <button onclick="voltarParaUsuario()" style="background: #ccc; color: #333; margin-bottom: 20px;">Voltar</button>
+	</div>
+    <div class="section">
+      <h3>Cadastro de Pagamentos</h3>
+      <input type="text" id="adminPagamento" placeholder="Descrição do Pagamento">
+      <button onclick="criarPagamento()">Adicionar Pagamento</button>
+      <table><thead><tr><th>Descrição</th><th>Ações</th></tr></thead><tbody id="tabelaPagamentos"></tbody></table>
+    </div>
+
+    <div class="section">
+      <h3>Cadastro de Jogos</h3>
+      <input type="text" id="adminJogo" placeholder="Adversário">
+      <input type="date" id="adminData">
+      <input type="number" id="adminValor" placeholder="Valor do Bicho" step="0.01">
+      <input type="number" id="adminCotas" placeholder="Cotas" step="0.01">
+      <select id="adminPagamentoSelect"></select>
+      <button onclick="adicionarJogo()">Adicionar Jogo</button>
+      <table><thead><tr><th>Adversário</th><th>Data</th><th>Valor</th><th>Cotas</th><th>Pagamento</th><th>Ações</th></tr></thead><tbody id="tabelaJogos"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = { apiKey: "AIzaSyCg98ohG0Jl33pvD7S124NR50PzBV6-R54", authDomain: "saf-botafogo-bicho.firebaseapp.com", databaseURL: "https://saf-botafogo-bicho-default-rtdb.firebaseio.com", projectId: "saf-botafogo-bicho", storageBucket: "saf-botafogo-bicho.appspot.com", messagingSenderId: "511539259417", appId: "1:511539259417:web:309ef5d84b565b6f686288" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function voltarParaUsuario() {
+  document.getElementById("admin-area").style.display = "none";
+}
+
+function formatarData(dataISO) {
+  const [ano, mes, dia] = dataISO.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+function acessarAdmin() {
+  const senha = prompt("Digite a senha de administrador:");
+  if (senha === "botafogo2025") {
+    document.getElementById("admin-area").style.display = "block";
+    carregarPagamentos();
+    carregarJogos();
+  } else {
+    alert("Senha incorreta!");
+  }
+}
+
+function criarPagamento() {
+  const descricao = document.getElementById("adminPagamento").value;
+  if (!descricao) return alert("Preencha a descrição do pagamento.");
+
+  db.ref("pagamentos").push({ descricao }).then(() => {
+    alert("Pagamento adicionado com sucesso!");
+    document.getElementById("adminPagamento").value = "";
+    carregarPagamentos();
+  });
+}
+
+function adicionarJogo() {
+  const adversario = document.getElementById("adminJogo").value;
+  const data = document.getElementById("adminData").value;
+  const valor = parseFloat(document.getElementById("adminValor").value);
+  const cotas = parseFloat(document.getElementById("adminCotas").value);
+  const pagamentoId = document.getElementById("adminPagamentoSelect").value;
+
+  if (!adversario || !data || isNaN(valor) || isNaN(cotas) || !pagamentoId) {
+    alert("Preencha todos os campos corretamente!");
+    return;
+  }
+
+  db.ref("jogos").push({ adversario, data, valor, cotas, pagamentoId }).then(() => {
+    alert("Jogo adicionado com sucesso!");
+    carregarJogos();
+  });
+}
+
+function carregarPagamentos() {
+  const selectUser = document.getElementById("pagamento");
+  const selectAdmin = document.getElementById("adminPagamentoSelect");
+  const tabela = document.getElementById("tabelaPagamentos");
+
+  selectUser.innerHTML = '<option value="">Selecione</option>';
+  selectAdmin.innerHTML = '<option value="">Selecione</option>';
+  tabela.innerHTML = "";
+
+  db.ref("pagamentos").once("value", snapshot => {
+    const dados = snapshot.val();
+    if (dados) {
+      Object.entries(dados).forEach(([id, pag]) => {
+        selectUser.innerHTML += `<option value="${id}">${pag.descricao}</option>`;
+        selectAdmin.innerHTML += `<option value="${id}">${pag.descricao}</option>`;
+        tabela.innerHTML += `<tr><td>${pag.descricao}</td><td><button onclick='editarPagamento("${id}", "${pag.descricao}")'>Editar</button> <button onclick='excluirPagamento("${id}")'>Excluir</button></td></tr>`;
+      });
+    }
+  });
+}
+
+function carregarJogos() {
+  const tabela = document.getElementById("tabelaJogos");
+  tabela.innerHTML = "";
+
+  db.ref("pagamentos").once("value", snapshotPagamentos => {
+    const pagamentos = snapshotPagamentos.val() || {};
+
+    db.ref("jogos").once("value", snapshotJogos => {
+      const dadosJogos = snapshotJogos.val();
+      if (dadosJogos) {
+        Object.entries(dadosJogos).forEach(([id, jogo]) => {
+          const nomePagamento = pagamentos[jogo.pagamentoId]?.descricao || "Pagamento não encontrado";
+          tabela.innerHTML += `<tr>
+            <td>${jogo.adversario}</td>
+            <td>${jogo.data}</td>
+            <td>${jogo.valor}</td>
+            <td>${jogo.cotas}</td>
+            <td>${nomePagamento}</td>
+            <td><button onclick='editarJogo("${id}", ${JSON.stringify(jogo)})'>Editar</button> <button onclick='excluirJogo("${id}")'>Excluir</button></td>
+          </tr>`;
+        });
+      }
+    });
+  });
+}
+
+function buscarJogos() {
+  const pagamentoId = document.getElementById("pagamento").value;
+  const cota = parseFloat(document.getElementById("cota").value);
+  const salario = parseFloat(document.getElementById("salario").value);
+  const container = document.getElementById("games");
+  container.innerHTML = "";
+  let total = 0;
+
+  if (!pagamentoId || isNaN(cota) || isNaN(salario)) {
+    alert("Preencha todos os campos antes de calcular.");
+    return;
+  }
+
+  db.ref("jogos").orderByChild("pagamentoId").equalTo(pagamentoId).once("value", snapshot => {
+    const jogos = snapshot.val();
+    if (!jogos) {
+      alert("Nenhum jogo encontrado para este pagamento.");
+      return;
+    }
+
+    Object.entries(jogos).forEach(([id, jogo]) => {
+      const tetoPct = (jogo.valor / 168000) * 0.15;
+      const tetoValor = salario * tetoPct;
+      const bichoBruto = Math.min((jogo.valor * cota / jogo.cotas), tetoValor);
+      total += bichoBruto;
+
+      container.innerHTML += `
+  <div class='card'>
+    <h4>${jogo.adversario}</h4>
+    <p>Data: ${formatarData(jogo.data)}</p>
+    <p>Bicho Total: R$ ${jogo.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+    <p>Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>
+    <div class='output'>Bicho: R$ ${bichoBruto.toFixed(2).replace('.', ',')}</div>
+  </div>`;
+
+    });
+
+    document.getElementById("total").innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+  });
+}
+
+function editarPagamento(id, atual) {
+  const novaDescricao = prompt("Editar descrição:", atual);
+  if (novaDescricao) db.ref("pagamentos/"+id).update({descricao: novaDescricao}).then(carregarPagamentos);
+}
+
+function editarJogo(id, atual) {
+  const novoAdversario = prompt("Editar adversário:", atual.adversario);
+  if (!novoAdversario) return;
+  const novaData = prompt("Editar data:", atual.data);
+  if (!novaData) return;
+  const novoValor = parseFloat(prompt("Editar valor:", atual.valor));
+  if (isNaN(novoValor)) return;
+  const novasCotas = parseFloat(prompt("Editar cotas:", atual.cotas));
+  if (isNaN(novasCotas)) return;
+
+  db.ref("jogos/"+id).update({ adversario: novoAdversario, data: novaData, valor: novoValor, cotas: novasCotas }).then(carregarJogos);
+}
+
+function excluirPagamento(id) {
+  db.ref("pagamentos/" + id).remove().then(carregarPagamentos);
+}
+
+function excluirJogo(id) {
+  db.ref("jogos/" + id).remove().then(carregarJogos);
+}
+
+window.onload = function() {
+  carregarPagamentos();
+};
+</script>
+</body>
+</html>
