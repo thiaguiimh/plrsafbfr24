@@ -578,24 +578,47 @@
 </div>
 
 <script>
-const firebaseConfig = { 
-  apiKey: "AIzaSyCg98ohG0Jl33pvD7S124NR50PzBV6-R54", 
-  authDomain: "saf-botafogo-bicho.firebaseapp.com", 
-  databaseURL: "https://saf-botafogo-bicho-default-rtdb.firebaseio.com", 
-  projectId: "saf-botafogo-bicho", 
-  storageBucket: "saf-botafogo-bicho.appspot.com", 
-  messagingSenderId: "511539259417", 
-  appId: "1:511539259417:web:309ef5d84b565b6f686288" 
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  
+  function formatarParaCalculo(valor) {
+    if (typeof valor === 'string') {
+      return parseFloat(valor.replace(/\./g, '').replace(',', '.'));
+    }
+    return valor;
+  }
 
-let currentEditingGameId = null;
+  const firebaseConfig = { 
+    apiKey: "AIzaSyCg98ohG0Jl33pvD7S124NR50PzBV6-R54", 
+    authDomain: "saf-botafogo-bicho.firebaseapp.com", 
+    databaseURL: "https://saf-botafogo-bicho-default-rtdb.firebaseio.com", 
+    projectId: "saf-botafogo-bicho", 
+    storageBucket: "saf-botafogo-bicho.appspot.com", 
+    messagingSenderId: "511539259417", 
+    appId: "1:511539259417:web:309ef5d84b565b6f686288" 
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-function voltarParaUsuario() {
-  document.getElementById("admin-area").style.display = "none";
-}
+  document.addEventListener('DOMContentLoaded', function() {
+    const salarioInput = document.getElementById("salario");
+    
+    if (salarioInput) {
+      salarioInput.addEventListener('input', function(e) {
+        let valor = e.target.value.replace(/\D/g, '');
+        valor = (valor/100).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+        e.target.value = valor;
+      });
+    }
+  });
 
+  let currentEditingGameId = null;
+
+  function voltarParaUsuario() {
+    document.getElementById("admin-area").style.display = "none";
+  }
+  
 function formatarData(dataISO) {
   const [ano, mes, dia] = dataISO.split("-");
   return `${dia}/${mes}/${ano}`;
@@ -717,8 +740,8 @@ function carregarJogos() {
 
 function buscarJogos() {
   const pagamentoId = document.getElementById("pagamento").value;
-  const cota = parseFloat(document.getElementById("cota").value);
-  const salario = parseFloat(document.getElementById("salario").value);
+  const cota = formatarParaCalculo(document.getElementById("cota").value);
+  const salario = formatarParaCalculo(document.getElementById("salario").value);
   const container = document.getElementById("games");
   container.innerHTML = "";
   let total = 0;
