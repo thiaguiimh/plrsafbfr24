@@ -54,23 +54,33 @@
     }
     
     .admin-link {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: transparent;
-      color: var(--primary);
-      border: 1px solid var(--primary);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      z-index: 100;
-    }
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 100;
+  width: auto; /* Importante: para substituir o width: 100% dos botões gerais */
+}
+
+.admin-link:hover {
+  background-color: var(--primary-light);
+}
+
+.admin-link svg {
+  width: 14px;
+  height: 14px;
+}
     
     .admin-link:hover {
       background-color: var(--primary-light);
