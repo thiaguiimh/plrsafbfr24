@@ -205,6 +205,9 @@
       font-weight: 600;
       margin-bottom: 12px;
       color: var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
     
     .card p {
@@ -221,6 +224,9 @@
       font-weight: 600;
       text-align: right;
       border-left: 4px solid var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .output.no-ceiling {
@@ -286,7 +292,6 @@
       border-radius: 4px;
       font-size: 12px;
       font-weight: 500;
-      margin-left: 8px;
     }
     
     /* Modal styles */
@@ -571,8 +576,6 @@ function formatarData(dataISO) {
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
@@ -670,7 +673,7 @@ function carregarJogos() {
           <tr>
             <td>${jogo.adversario}</td>
             <td>${jogo.data}</td>
-            <td>${formatarMoeda(jogo.valor)}</td>
+            <td>R$ ${formatarMoeda(jogo.valor)}</td>
             <td>${jogo.cotas}</td>
             <td>${nomePagamento}</td>
             <td>${jogo.noCeiling ? '✓' : '✗'}</td>
@@ -713,7 +716,7 @@ function buscarJogos() {
         bichoBruto = jogo.valor * cota / jogo.cotas;
         description = `
           <div class="output no-ceiling">
-            Bicho Bruto: ${formatarMoeda(bichoBruto)}
+            <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
             <span class="no-ceiling-tag">Sem teto</span>
           </div>
         `;
@@ -725,7 +728,7 @@ function buscarJogos() {
         description = `
           <p>Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>
           <div class="output">
-            Bicho Bruto: ${formatarMoeda(bichoBruto)}
+            <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
           </div>
         `;
       }
@@ -734,14 +737,17 @@ function buscarJogos() {
 
       container.innerHTML += `
         <div class='card'>
-          <h4>${jogo.adversario} ${jogo.noCeiling ? '<span class="no-ceiling-tag">Sem teto</span>' : ''}</h4>
+          <h4>
+            ${jogo.adversario}
+            ${jogo.noCeiling ? '<span class="no-ceiling-tag">Sem teto</span>' : ''}
+          </h4>
           <p>Data: ${formatarData(jogo.data)}</p>
-          <p>Bicho Total Staff: ${formatarMoeda(jogo.valor)}</p>
+          <p>Bicho Total Staff: R$ ${formatarMoeda(jogo.valor)}</p>
           ${description}
         </div>`;
     });
 
-    document.getElementById("total").innerText = total.toFixed(2).replace('.', ',');
+    document.getElementById("total").innerText = formatarMoeda(total);
   });
 }
 
