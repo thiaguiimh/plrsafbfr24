@@ -112,7 +112,7 @@
       color: var(--primary);
       border: 1px solid var(--primary);
       border-radius: 8px;
-      padding: 6px 12px;
+      padding: 8px 12px;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
@@ -120,6 +120,8 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      height: 36px; /* Altura fixa */
+      white-space: nowrap; /* Evita quebra de linha */
     }
     
     .theme-toggle:hover, .admin-link:hover {
@@ -129,6 +131,7 @@
     .theme-toggle svg, .admin-link svg {
       width: 14px;
       height: 14px;
+      flex-shrink: 0; /* Evita que o ícone diminua */
     }
     
     .logo-container {
@@ -138,9 +141,10 @@
     }
     
     .logo {
-      max-width: 220px;
+      width: 220px; /* Largura fixa */
       height: auto;
       margin-bottom: 10px;
+      object-fit: contain; /* Garante que a imagem mantenha proporções */
     }
     
     h2 {
@@ -470,7 +474,7 @@
       }
       
       .theme-toggle, .admin-link {
-        padding: 6px 10px;
+        padding: 8px 10px;
         font-size: 12px;
       }
     }
