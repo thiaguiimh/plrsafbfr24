@@ -175,10 +175,12 @@
     }
     
     .games-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 20px;
       margin-top: 30px;
+      padding: 0 20px;
+      justify-content: center;
     }
     
     .card {
@@ -188,6 +190,9 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
       border: 1px solid var(--border);
       transition: all 0.2s ease;
+      width: calc(25% - 20px);
+      min-width: 280px;
+      flex-grow: 1;
     }
     
     .card:hover {
@@ -284,6 +289,62 @@
       margin-left: 8px;
     }
     
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    @media (max-width: 1024px) {
+      .card {
+        width: calc(33.333% - 20px);
+      }
+    }
+    
     @media (max-width: 768px) {
       body {
         padding: 20px 10px;
@@ -301,8 +362,8 @@
         padding: 30px 20px 15px;
       }
       
-      .games-container {
-        grid-template-columns: 1fr;
+      .card {
+        width: calc(50% - 20px);
       }
       
       .total-container {
@@ -311,6 +372,12 @@
       
       .total-output {
         font-size: 28px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .card {
+        width: 100%;
       }
     }
   </style>
@@ -440,6 +507,44 @@
   </div>
 </div>
 
+<!-- Edit Game Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Editar Jogo</h3>
+      <button class="close-modal" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="input-group">
+      <label for="editAdversario">Adversário:</label>
+      <input type="text" id="editAdversario">
+    </div>
+    <div class="input-group">
+      <label for="editData">Data:</label>
+      <input type="date" id="editData">
+    </div>
+    <div class="input-group">
+      <label for="editValor">Valor do Bicho:</label>
+      <input type="number" id="editValor" step="0.01">
+    </div>
+    <div class="input-group">
+      <label for="editCotas">Cotas:</label>
+      <input type="number" id="editCotas" step="0.01">
+    </div>
+    <div class="input-group">
+      <label for="editPagamentoSelect">Pagamento:</label>
+      <select id="editPagamentoSelect"></select>
+    </div>
+    <div class="checkbox-container">
+      <input type="checkbox" id="editNoCeiling">
+      <label for="editNoCeiling">Sem aplicação de teto</label>
+    </div>
+    <div class="modal-actions">
+      <button onclick="saveGameChanges()" style="flex: 1;">Salvar</button>
+      <button onclick="closeModal()" class="secondary" style="flex: 1;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const firebaseConfig = { 
   apiKey: "AIzaSyCg98ohG0Jl33pvD7S124NR50PzBV6-R54", 
@@ -452,6 +557,8 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+let currentEditingGameId = null;
 
 function voltarParaUsuario() {
   document.getElementById("admin-area").style.display = "none";
@@ -519,10 +626,12 @@ function adicionarJogo() {
 function carregarPagamentos() {
   const selectUser = document.getElementById("pagamento");
   const selectAdmin = document.getElementById("adminPagamentoSelect");
+  const editSelect = document.getElementById("editPagamentoSelect");
   const tabela = document.getElementById("tabelaPagamentos");
 
   selectUser.innerHTML = '<option value="">Selecione</option>';
   selectAdmin.innerHTML = '<option value="">Selecione</option>';
+  editSelect.innerHTML = '<option value="">Selecione</option>';
   tabela.innerHTML = "";
 
   db.ref("pagamentos").once("value", snapshot => {
@@ -531,6 +640,7 @@ function carregarPagamentos() {
       Object.entries(dados).forEach(([id, pag]) => {
         selectUser.innerHTML += `<option value="${id}">${pag.descricao}</option>`;
         selectAdmin.innerHTML += `<option value="${id}">${pag.descricao}</option>`;
+        editSelect.innerHTML += `<option value="${id}">${pag.descricao}</option>`;
         tabela.innerHTML += `
           <tr>
             <td>${pag.descricao}</td>
@@ -565,7 +675,7 @@ function carregarJogos() {
             <td>${nomePagamento}</td>
             <td>${jogo.noCeiling ? '✓' : '✗'}</td>
             <td>
-              <button onclick='editarJogo("${id}", ${JSON.stringify(jogo)})' class="secondary" style="padding: 6px 12px; font-size: 13px; margin-right: 6px;">Editar</button>
+              <button onclick='openEditModal("${id}", ${JSON.stringify(jogo)})' class="secondary" style="padding: 6px 12px; font-size: 13px; margin-right: 6px;">Editar</button>
               <button onclick='excluirJogo("${id}")' style="padding: 6px 12px; font-size: 13px;">Excluir</button>
             </td>
           </tr>`;
@@ -635,29 +745,53 @@ function buscarJogos() {
   });
 }
 
+function openEditModal(id, jogo) {
+  currentEditingGameId = id;
+  document.getElementById("editAdversario").value = jogo.adversario;
+  document.getElementById("editData").value = jogo.data;
+  document.getElementById("editValor").value = jogo.valor;
+  document.getElementById("editCotas").value = jogo.cotas;
+  document.getElementById("editPagamentoSelect").value = jogo.pagamentoId;
+  document.getElementById("editNoCeiling").checked = jogo.noCeiling || false;
+  
+  document.getElementById("editModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("editModal").style.display = "none";
+  currentEditingGameId = null;
+}
+
+function saveGameChanges() {
+  const adversario = document.getElementById("editAdversario").value;
+  const data = document.getElementById("editData").value;
+  const valor = parseFloat(document.getElementById("editValor").value);
+  const cotas = parseFloat(document.getElementById("editCotas").value);
+  const pagamentoId = document.getElementById("editPagamentoSelect").value;
+  const noCeiling = document.getElementById("editNoCeiling").checked;
+
+  if (!adversario || !data || isNaN(valor) || isNaN(cotas) || !pagamentoId) {
+    alert("Preencha todos os campos corretamente!");
+    return;
+  }
+
+  db.ref("jogos/" + currentEditingGameId).update({ 
+    adversario, 
+    data, 
+    valor, 
+    cotas, 
+    pagamentoId, 
+    noCeiling 
+  }).then(() => {
+    alert("Jogo atualizado com sucesso!");
+    carregarJogos();
+    closeModal();
+  });
+}
+
 function editarPagamento(id, atual) {
   const novaDescricao = prompt("Editar descrição:", atual);
   if (novaDescricao) db.ref("pagamentos/"+id).update({descricao: novaDescricao}).then(carregarPagamentos);
-}
-
-function editarJogo(id, atual) {
-  const novoAdversario = prompt("Editar adversário:", atual.adversario);
-  if (!novoAdversario) return;
-  const novaData = prompt("Editar data:", atual.data);
-  if (!novaData) return;
-  const novoValor = parseFloat(prompt("Editar valor:", atual.valor));
-  if (isNaN(novoValor)) return;
-  const novasCotas = parseFloat(prompt("Editar cotas:", atual.cotas));
-  if (isNaN(novasCotas)) return;
-  const novoNoCeiling = confirm("Este jogo deve ser SEM aplicação de teto? (OK para Sim, Cancelar para Não)");
-
-  db.ref("jogos/"+id).update({ 
-    adversario: novoAdversario, 
-    data: novaData, 
-    valor: novoValor, 
-    cotas: novasCotas,
-    noCeiling: novoNoCeiling
-  }).then(carregarJogos);
 }
 
 function excluirPagamento(id) {
