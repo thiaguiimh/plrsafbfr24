@@ -193,11 +193,23 @@
       width: calc(25% - 20px);
       min-width: 280px;
       flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    .card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .card-footer {
+      margin-top: auto;
+    }
+    
+    .output-container {
+      margin-top: 15px;
     }
     
     .card h4 {
@@ -220,13 +232,13 @@
       background: #f8f8fa;
       padding: 12px;
       border-radius: 10px;
-      margin-top: 15px;
       font-weight: 600;
       text-align: right;
       border-left: 4px solid var(--primary);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      min-height: 44px;
     }
     
     .output.no-ceiling {
@@ -294,7 +306,6 @@
       font-weight: 500;
     }
     
-    /* Modal styles */
     .modal {
       display: none;
       position: fixed;
@@ -715,9 +726,11 @@ function buscarJogos() {
         // Jogo sem aplicação de teto
         bichoBruto = jogo.valor * cota / jogo.cotas;
         description = `
-          <div class="output no-ceiling">
-            <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
-            <span class="no-ceiling-tag">Sem teto</span>
+          <div class="output-container">
+            <div class="output no-ceiling">
+              <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
+              <span class="no-ceiling-tag">Sem teto</span>
+            </div>
           </div>
         `;
       } else {
@@ -726,9 +739,11 @@ function buscarJogos() {
         const tetoValor = salario * tetoPct;
         bichoBruto = Math.min((jogo.valor * cota / jogo.cotas), tetoValor);
         description = `
-          <p>Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>
-          <div class="output">
-            <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
+          <div class="output-container">
+            <p>Teto: ${(tetoPct * 100).toFixed(2)}% do Salário Bruto</p>
+            <div class="output">
+              <span>Bicho Bruto: R$ ${formatarMoeda(bichoBruto)}</span>
+            </div>
           </div>
         `;
       }
@@ -737,13 +752,17 @@ function buscarJogos() {
 
       container.innerHTML += `
         <div class='card'>
-          <h4>
-            ${jogo.adversario}
-            ${jogo.noCeiling ? '<span class="no-ceiling-tag">Sem teto</span>' : ''}
-          </h4>
-          <p>Data: ${formatarData(jogo.data)}</p>
-          <p>Bicho Total Staff: R$ ${formatarMoeda(jogo.valor)}</p>
-          ${description}
+          <div class="card-content">
+            <h4>
+              ${jogo.adversario}
+              ${jogo.noCeiling ? '<span class="no-ceiling-tag">Sem teto</span>' : ''}
+            </h4>
+            <p>Data: ${formatarData(jogo.data)}</p>
+            <p>Bicho Total Staff: R$ ${formatarMoeda(jogo.valor)}</p>
+            <div class="card-footer">
+              ${description}
+            </div>
+          </div>
         </div>`;
     });
 
